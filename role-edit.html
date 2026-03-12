@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>编辑角色 - 平台管理系统</title>
+  <style>
+    :root {
+      --primary: #1677ff;
+      --bg: #f5f7fb;
+      --card: #fff;
+      --border: rgba(5,5,5,.10);
+      --text: rgba(0,0,0,.88);
+      --text2: rgba(0,0,0,.65);
+      --radius: 10px;
+      --shadow: 0 6px 20px rgba(0,0,0,.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+    .app-header { height: 64px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 48px; }
+    .app-logo { font-size: 18px; font-weight: 600; color: var(--primary); white-space: nowrap; }
+    .top-nav-container { display: flex; gap: 4px; flex: 1; }
+    .top-nav-item { padding: 8px 16px; text-decoration: none; color: var(--text); border-radius: 6px; font-size: 14px; transition: background .2s, color .2s; position: relative; }
+    .top-nav-item:hover { background: rgba(22, 119, 255, .08); color: var(--primary); }
+    .top-nav-item.is-active { color: var(--primary); font-weight: 500; background: #e6f4ff; }
+    .top-nav-item.is-active::after { content: ''; position: absolute; bottom: 0; left: 16px; right: 16px; height: 2px; background: var(--primary); border-radius: 1px; }
+    .app-body { flex: 1; display: flex; min-height: 0; }
+    .app-sider { width: 220px; background: var(--card); border-right: 1px solid var(--border); padding: 16px 0; flex-shrink: 0; }
+    .app-sider.is-hidden { width: 0; min-width: 0; opacity: 0; overflow: hidden; padding: 0; border-right: none; }
+    .side-nav-container { display: flex; flex-direction: column; gap: 2px; }
+    .side-nav-item { padding: 10px 20px; text-decoration: none; color: var(--text2); font-size: 14px; border-radius: 6px; border-left: 3px solid transparent; transition: all .2s; }
+    .side-nav-item:hover { color: var(--primary); background: rgba(22, 119, 255, .06); }
+    .side-nav-item.is-active { color: var(--primary); background: #e6f4ff; font-weight: 500; border-left-color: var(--primary); }
+    .app-content { flex: 1; padding: 24px; overflow: auto; }
+    .edit-page { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 32px; }
+    .edit-title { font-size: 20px; font-weight: 600; margin-bottom: 24px; color: var(--text); }
+    .form-section { margin-bottom: 28px; }
+    .form-section-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: var(--text); padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .form-item { margin-bottom: 16px; }
+    .form-item:last-child { margin-bottom: 0; }
+    .form-label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--text); }
+    .form-label .required { color: #ff4d4f; }
+    .form-input, .form-select, .form-textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary); }
+    .form-textarea { min-height: 80px; resize: vertical; }
+    .form-item.is-hidden { display: none; }
+    .form-actions { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; gap: 12px; }
+    .btn { height: 36px; padding: 0 20px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; transition: background .2s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #4096ff; }
+    .btn-default { background: var(--card); border: 1px solid var(--border); color: var(--text); }
+    .btn-default:hover { background: #fafafa; border-color: var(--primary); color: var(--primary); }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="app-logo">平台管理系统</div>
+      <nav class="top-nav-container"></nav>
+    </header>
+    <div class="app-body">
+      <aside class="app-sider is-hidden" data-sider="base-control">
+        <nav class="side-nav-container"></nav>
+      </aside>
+      <main id="app-main" class="app-content">
+        <div class="edit-page">
+          <h1 class="edit-title">编辑角色</h1>
+          <form id="roleEditForm">
+            <input type="hidden" id="roleId">
+            <div class="form-section">
+              <div class="form-section-title">基础信息</div>
+              <div class="form-item">
+                <label class="form-label">角色名称 <span class="required">*</span></label>
+                <input type="text" class="form-input" id="roleName" placeholder="请输入角色名称" required>
+              </div>
+              <div class="form-item">
+                <label class="form-label">角色层级 <span class="required">*</span></label>
+                <select class="form-select" id="roleLevel" required>
+                  <option value="">请选择角色层级</option>
+                  <option value="平台角色">平台角色</option>
+                  <option value="应用角色">应用角色</option>
+                  <option value="开发角色">开发角色</option>
+                </select>
+              </div>
+              <div class="form-item" id="workspaceItem">
+                <label class="form-label">工作空间 <span class="required">*</span></label>
+                <select class="form-select" id="workspace">
+                  <option value="">请选择工作空间</option>
+                </select>
+              </div>
+              <div class="form-item">
+                <label class="form-label">描述</label>
+                <textarea class="form-textarea" id="desc" placeholder="请输入描述"></textarea>
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-title">权限配置</div>
+                <img src="point.png" alt="权限点" style="width:100%;">
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">确定</button>
+              <a href="role-mgmt.html" class="btn btn-default">取消</a>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="./common.js"></script>
+  <script>
+    initLayout();
+
+    (function () {
+      var workspaceList = [
+        { id: 'ws0', name: '公共工作空间' },
+        { id: 'ws1', name: '研发工作空间' },
+        { id: 'ws2', name: '产品工作空间' },
+        { id: 'ws3', name: '市场工作空间' }
+      ];
+
+      function getRoleId() {
+        var href = window.location.href;
+        var idx = href.indexOf('?');
+        if (idx === -1) return '';
+        var params = href.slice(idx + 1).split('&');
+        for (var i = 0; i < params.length; i++) {
+          var p = params[i].split('=');
+          if (p[0] === 'id') return decodeURIComponent(p[1] || '');
+        }
+        return '';
+      }
+
+      var roleId = getRoleId();
+      var defaultRoleList = [
+        { id: 'r1', name: '租户管理员', level: '平台角色', type: '系统默认', desc: '拥有系统最高权限', creator: 'system' },
+        { id: 'r2', name: '组织管理员', level: '平台角色', type: '系统默认', desc: '管理组织内的用户与资源', creator: 'system' },
+        { id: 'r3', name: '组织用户', level: '平台角色', type: '系统默认', desc: '组织内普通用户', creator: 'system' },
+        { id: 'r4', name: '空间管理员', level: '开发角色', type: '系统默认', desc: '管理工作空间内的资源', creator: 'system' },
+        { id: 'r5', name: '空间成员', level: '开发角色', type: '系统默认', desc: '工作空间普通成员', creator: 'system' },
+        { id: 'r6', name: '项目经理', level: '应用角色', type: '自定义', desc: '负责项目整体规划与协调', creator: 'admin' },
+        { id: 'r7', name: '开发工程师', level: '开发角色', type: '自定义', desc: '参与项目开发工作', creator: 'admin', workspaceId: 'ws1' }
+      ];
+      var roleList = JSON.parse(localStorage.getItem('roleList') || 'null');
+      if (!roleList || roleList.length === 0) roleList = defaultRoleList;
+      var role = roleList.find(function (r) { return r.id === roleId; });
+
+      if (!role) {
+        alert('未找到该角色');
+        window.location.href = 'role-mgmt.html';
+      } else {
+        document.getElementById('roleId').value = role.id;
+        document.getElementById('roleName').value = role.name || '';
+        document.getElementById('roleLevel').value = role.level || '平台角色';
+        document.getElementById('desc').value = role.desc || '';
+
+        var workspaceItem = document.getElementById('workspaceItem');
+        var workspaceSelect = document.getElementById('workspace');
+        workspaceList.forEach(function (ws) {
+          var opt = document.createElement('option');
+          opt.value = ws.id;
+          opt.textContent = ws.name;
+          if (role.workspaceId === ws.id) opt.selected = true;
+          workspaceSelect.appendChild(opt);
+        });
+
+        if (role.level === '开发角色') {
+          workspaceItem.classList.remove('is-hidden');
+          workspaceSelect.setAttribute('required', 'required');
+        } else {
+          workspaceItem.classList.add('is-hidden');
+          workspaceSelect.removeAttribute('required');
+        }
+
+        document.getElementById('roleLevel').addEventListener('change', function () {
+          if (this.value === '开发角色') {
+            workspaceItem.classList.remove('is-hidden');
+            workspaceSelect.setAttribute('required', 'required');
+          } else {
+            workspaceItem.classList.add('is-hidden');
+            workspaceSelect.removeAttribute('required');
+            workspaceSelect.value = '';
+          }
+        });
+
+        document.getElementById('roleEditForm').addEventListener('submit', function (e) {
+          e.preventDefault();
+          var name = document.getElementById('roleName').value.trim();
+          var level = document.getElementById('roleLevel').value;
+          var workspaceId = document.getElementById('workspace').value;
+          if (!name) { alert('请输入角色名称'); return; }
+          if (level === '开发角色' && !workspaceId) { alert('请选择工作空间'); return; }
+          role.name = name;
+          role.level = level;
+          role.desc = document.getElementById('desc').value.trim();
+          role.workspaceId = level === '开发角色' ? workspaceId : '';
+          var idx = roleList.findIndex(function (r) { return r.id === roleId; });
+          if (idx !== -1) roleList[idx] = role;
+          localStorage.setItem('roleList', JSON.stringify(roleList));
+          alert('角色更新成功');
+          window.location.href = 'role-mgmt.html';
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>大数据引擎管理 - 平台管理系统</title>
+  <style>
+    :root {
+      --primary: #1677ff;
+      --bg: #f5f7fb;
+      --card: #fff;
+      --border: rgba(5,5,5,.10);
+      --text: rgba(0,0,0,.88);
+      --text2: rgba(0,0,0,.65);
+      --radius: 10px;
+      --shadow: 0 6px 20px rgba(0,0,0,.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+    .app-header { height: 64px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 48px; }
+    .app-logo { font-size: 18px; font-weight: 600; color: var(--primary); white-space: nowrap; }
+    .top-nav-container { display: flex; gap: 4px; flex: 1; }
+    .top-nav-item { padding: 8px 16px; text-decoration: none; color: var(--text); border-radius: 6px; font-size: 14px; transition: background .2s, color .2s; position: relative; }
+    .top-nav-item:hover { background: rgba(22, 119, 255, .08); color: var(--primary); }
+    .top-nav-item.is-active { color: var(--primary); font-weight: 500; background: #e6f4ff; }
+    .top-nav-item.is-active::after { content: ''; position: absolute; bottom: 0; left: 16px; right: 16px; height: 2px; background: var(--primary); border-radius: 1px; }
+    .app-body { flex: 1; display: flex; min-height: 0; }
+    .app-sider { width: 220px; background: var(--card); border-right: 1px solid var(--border); padding: 16px 0; flex-shrink: 0; }
+    .app-sider.is-hidden { width: 0; min-width: 0; opacity: 0; overflow: hidden; padding: 0; border-right: none; }
+    .side-nav-container { display: flex; flex-direction: column; gap: 2px; }
+    .side-nav-item { padding: 10px 20px; text-decoration: none; color: var(--text2); font-size: 14px; border-radius: 6px; border-left: 3px solid transparent; transition: all .2s; }
+    .side-nav-item:hover { color: var(--primary); background: rgba(22, 119, 255, .06); }
+    .side-nav-item.is-active { color: var(--primary); background: #e6f4ff; font-weight: 500; border-left-color: var(--primary); }
+    .app-content { flex: 1; padding: 24px; overflow: auto; }
+    .page { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .page-title { font-size: 20px; font-weight: 600; margin: 0; color: var(--text); }
+    .table-wrap { flex: 1; overflow: auto; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .data-table th, .data-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+    .data-table th { background: #fafafa; color: var(--text2); font-weight: 500; white-space: nowrap; }
+    .data-table td { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="app-logo">平台管理系统</div>
+      <nav class="top-nav-container"></nav>
+    </header>
+    <div class="app-body">
+      <aside class="app-sider is-hidden" data-sider="base-control">
+        <nav class="side-nav-container"></nav>
+      </aside>
+      <main id="app-main" class="app-content">
+        <div class="page">
+          <div class="page-header">
+            <h1 class="page-title">大数据引擎管理</h1>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>大数据引擎名称</th>
+                  <th>类型</th>
+                  <th>发行版本</th>
+                  <th>描述</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="./common.js"></script>
+  <script>
+    initLayout();
+
+    (function () {
+      var defaultEngineList = [
+        { id: 'eng1', name: '研发大数据引擎', type: 'Hadoop', version: 'CDH', desc: '研发环境使用的 Hadoop 大数据引擎' },
+        { id: 'eng2', name: '分析大数据引擎', type: 'Doris', version: '通用版本', desc: '通用明细分析场景的大数据引擎' }
+      ];
+
+      var engineList = JSON.parse(localStorage.getItem('bigdataEngineList') || 'null');
+      if (!engineList || engineList.length === 0) {
+        engineList = JSON.parse(JSON.stringify(defaultEngineList));
+        localStorage.setItem('bigdataEngineList', JSON.stringify(engineList));
+      }
+
+      function renderTable() {
+        var tbody = document.getElementById('tableBody');
+        tbody.innerHTML = engineList.map(function (e) {
+          return '<tr>' +
+            '<td>' + (e.name || '-') + '</td>' +
+            '<td>' + (e.type || '-') + '</td>' +
+            '<td>' + (e.version || '-') + '</td>' +
+            '<td>' + (e.desc || '-') + '</td>' +
+            '</tr>';
+        }).join('');
+      }
+
+      renderTable();
+    })();
+  </script>
+</body>
+</html>
+

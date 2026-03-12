@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>存储卷管理 - 平台管理系统</title>
+  <style>
+    :root {
+      --primary: #1677ff;
+      --bg: #f5f7fb;
+      --card: #fff;
+      --border: rgba(5,5,5,.10);
+      --text: rgba(0,0,0,.88);
+      --text2: rgba(0,0,0,.65);
+      --radius: 10px;
+      --shadow: 0 6px 20px rgba(0,0,0,.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+    .app-header { height: 64px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 48px; }
+    .app-logo { font-size: 18px; font-weight: 600; color: var(--primary); white-space: nowrap; }
+    .top-nav-container { display: flex; gap: 4px; flex: 1; }
+    .top-nav-item { padding: 8px 16px; text-decoration: none; color: var(--text); border-radius: 6px; font-size: 14px; transition: background .2s, color .2s; position: relative; }
+    .top-nav-item:hover { background: rgba(22, 119, 255, .08); color: var(--primary); }
+    .top-nav-item.is-active { color: var(--primary); font-weight: 500; background: #e6f4ff; }
+    .top-nav-item.is-active::after { content: ''; position: absolute; bottom: 0; left: 16px; right: 16px; height: 2px; background: var(--primary); border-radius: 1px; }
+    .app-body { flex: 1; display: flex; min-height: 0; }
+    .app-sider { width: 220px; background: var(--card); border-right: 1px solid var(--border); padding: 16px 0; flex-shrink: 0; }
+    .app-sider.is-hidden { width: 0; min-width: 0; opacity: 0; overflow: hidden; padding: 0; border-right: none; }
+    .side-nav-container { display: flex; flex-direction: column; gap: 2px; }
+    .side-nav-item { padding: 10px 20px; text-decoration: none; color: var(--text2); font-size: 14px; border-radius: 6px; border-left: 3px solid transparent; transition: all .2s; }
+    .side-nav-item:hover { color: var(--primary); background: rgba(22, 119, 255, .06); }
+    .side-nav-item.is-active { color: var(--primary); background: #e6f4ff; font-weight: 500; border-left-color: var(--primary); }
+    .app-content { flex: 1; padding: 24px; overflow: auto; display: flex; flex-direction: column; }
+    .page { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .page-title { font-size: 20px; font-weight: 600; margin: 0; color: var(--text); }
+    .btn { height: 32px; padding: 0 16px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; transition: background .2s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #4096ff; }
+    .btn-text { background: transparent; color: var(--primary); }
+    .btn-text:hover { background: rgba(22, 119, 255, .08); }
+    .btn-danger { background: transparent; color: #ff4d4f; }
+    .btn-danger:hover { background: rgba(255, 77, 79, .08); }
+    .btn-default { background: var(--card); border: 1px solid var(--border); color: var(--text); }
+    .btn-default:hover { background: #fafafa; border-color: var(--primary); color: var(--primary); }
+    .table-wrap { flex: 1; overflow: auto; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .data-table th, .data-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+    .data-table th { background: #fafafa; color: var(--text2); font-weight: 500; white-space: nowrap; }
+    .data-table td { color: var(--text); }
+    .data-table .col-ops { white-space: nowrap; }
+    .data-table .col-ops .btn { padding: 0 8px; margin-right: 8px; }
+    .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-mask.is-hidden { display: none; }
+    .modal { background: var(--card); border-radius: var(--radius); box-shadow: 0 12px 48px rgba(0,0,0,.15); width: 560px; max-width: 90vw; max-height: 85vh; overflow: hidden; display: flex; flex-direction: column; }
+    .modal-header { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 16px; font-weight: 600; }
+    .modal-body { padding: 24px; overflow: auto; flex: 1; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+    .form-item { margin-bottom: 16px; }
+    .form-label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--text); }
+    .form-label .required { color: #ff4d4f; }
+    .form-input, .form-select { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+    .form-input:focus, .form-select:focus { outline: none; border-color: var(--primary); }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="app-logo">平台管理系统</div>
+      <nav class="top-nav-container"></nav>
+    </header>
+    <div class="app-body">
+      <aside class="app-sider is-hidden" data-sider="base-control">
+        <nav class="side-nav-container"></nav>
+      </aside>
+      <main id="app-main" class="app-content">
+        <div class="page">
+          <div class="page-header">
+            <h1 class="page-title">存储卷管理</h1>
+            <button type="button" class="btn btn-primary" id="btnAdd">新增存储卷</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>存储卷名称</th>
+                  <th>剩余/总（GiB）</th>
+                  <th>创建人</th>
+                  <th>创建时间</th>
+                  <th class="col-ops">操作</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div class="modal-mask is-hidden" id="editModal">
+    <div class="modal">
+      <div class="modal-header" id="modalTitle">新增存储卷</div>
+      <div class="modal-body">
+        <div class="form-item">
+          <label class="form-label">存储卷名称 <span class="required">*</span></label>
+          <input type="text" class="form-input" id="modalName" placeholder="请输入存储卷名称">
+        </div>
+        <div class="form-item">
+          <label class="form-label">绑定存储源 <span class="required">*</span></label>
+          <select class="form-select" id="modalSourceSelect"><option value="">请选择存储源</option></select>
+        </div>
+        <div class="form-item" id="modalCapRow" style="display:none;">
+          <label class="form-label">容量分配（GiB）</label>
+          <input type="number" class="form-input" id="modalCap" min="0" placeholder="上限">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" id="modalCancel">取消</button>
+        <button type="button" class="btn btn-primary" id="modalConfirm">确定</button>
+      </div>
+    </div>
+  </div>
+  <script src="./common.js"></script>
+  <script>
+    initLayout();
+
+    (function () {
+      // 存储源（storage sources）
+      var defaultSources = [
+        { id: 'st1', name: '默认存储', used: 500, total: 2000 },
+        { id: 'st2', name: '对象存储A', used: 1200, total: 5000 }
+      ];
+      var sourceList = JSON.parse(localStorage.getItem('storageList') || 'null');
+      if (!sourceList || sourceList.length === 0) {
+        sourceList = JSON.parse(JSON.stringify(defaultSources));
+        localStorage.setItem('storageList', JSON.stringify(sourceList));
+      }
+
+      // 存储卷（storage volumes）— 每个卷仅绑定一个存储源
+      var defaultVolumes = [
+        { id: 'vol1', name: '默认存储卷', creator: 'admin', createTime: '2024-01-10 10:00:00', bindings: [{ storageSourceId: 'st1', capacity: 500 }] },
+        { id: 'vol2', name: '对象存储卷', creator: 'admin', createTime: '2024-01-10 11:00:00', bindings: [{ storageSourceId: 'st2', capacity: 1000 }] }
+      ];
+      var volumeList = JSON.parse(localStorage.getItem('storageVolumeList') || 'null');
+      if (!volumeList || volumeList.length === 0) {
+        volumeList = JSON.parse(JSON.stringify(defaultVolumes));
+        localStorage.setItem('storageVolumeList', JSON.stringify(volumeList));
+      }
+
+      function getSourceDisplay(src) {
+        var remain = src.total - (src.used || 0);
+        return src.name + '（剩余 ' + remain + '/' + src.total + ' GiB）';
+      }
+
+      function getSourceRemain(src) {
+        return src.total - (src.used || 0);
+      }
+
+      var editId = null;
+
+      function updateStorageModalFields() {
+        var sel = document.getElementById('modalSourceSelect');
+        var capRow = document.getElementById('modalCapRow');
+        var src = sourceList.find(function (x) { return x.id === sel.value; });
+        if (!src) { capRow.style.display = 'none'; return; }
+        capRow.style.display = '';
+        var remain = getSourceRemain(src);
+        var capInput = document.getElementById('modalCap');
+        capInput.max = remain;
+        capInput.placeholder = '上限 ' + remain + ' GiB';
+      }
+
+      function renderTable() {
+        var tbody = document.getElementById('tableBody');
+        tbody.innerHTML = volumeList.map(function (v) {
+          var total = 0;
+          (v.bindings || []).forEach(function (b) {
+            total += b.capacity || 0;
+          });
+          // 剩余 = 总 - 已用（本系统暂不跟踪按卷的用量，显示为 total/total）
+          var remain = total;
+          return '<tr data-id="' + v.id + '">' +
+            '<td>' + (v.name || '-') + '</td>' +
+            '<td>' + remain + '/' + total + '</td>' +
+            '<td>' + (v.creator || '-') + '</td>' +
+            '<td>' + (v.createTime || '-') + '</td>' +
+            '<td class="col-ops">' +
+            '<button type="button" class="btn btn-text btn-edit" data-id="' + v.id + '">编辑</button>' +
+            '<button type="button" class="btn btn-danger btn-delete" data-id="' + v.id + '">删除</button>' +
+            '</td></tr>';
+        }).join('');
+        tbody.querySelectorAll('.btn-edit').forEach(function (btn) {
+          btn.addEventListener('click', function () { openModal(btn.dataset.id); });
+        });
+        tbody.querySelectorAll('.btn-delete').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var v = volumeList.find(function (x) { return x.id === btn.dataset.id; });
+            if (!v) return;
+            if (confirm('确定要删除存储卷「' + v.name + '」吗？')) {
+              volumeList = volumeList.filter(function (x) { return x.id !== btn.dataset.id; });
+              localStorage.setItem('storageVolumeList', JSON.stringify(volumeList));
+              renderTable();
+            }
+          });
+        });
+      }
+
+      function openModal(id) {
+        editId = id || null;
+        document.getElementById('modalTitle').textContent = editId ? '编辑存储卷' : '新增存储卷';
+        document.getElementById('modalName').value = '';
+        var sel = document.getElementById('modalSourceSelect');
+        sel.innerHTML = '<option value="">请选择存储源</option>' +
+          sourceList.map(function (s) { return '<option value="' + s.id + '">' + getSourceDisplay(s) + '</option>'; }).join('');
+        sel.value = '';
+        document.getElementById('modalCap').value = '';
+        if (editId) {
+          var v = volumeList.find(function (x) { return x.id === editId; });
+          if (v && v.bindings && v.bindings[0]) {
+            var b = v.bindings[0];
+            document.getElementById('modalName').value = v.name || '';
+            sel.value = b.storageSourceId || '';
+            document.getElementById('modalCap').value = b.capacity || '';
+          }
+        }
+        updateStorageModalFields();
+        document.getElementById('editModal').classList.remove('is-hidden');
+      }
+
+      document.getElementById('btnAdd').addEventListener('click', function () { openModal(null); });
+      document.getElementById('modalSourceSelect').addEventListener('change', updateStorageModalFields);
+
+      document.getElementById('modalCancel').addEventListener('click', function () {
+        document.getElementById('editModal').classList.add('is-hidden');
+      });
+
+      document.getElementById('modalConfirm').addEventListener('click', function () {
+        var name = document.getElementById('modalName').value.trim();
+        if (!name) { alert('请输入存储卷名称'); return; }
+        var srcId = document.getElementById('modalSourceSelect').value;
+        if (!srcId) { alert('请选择存储源'); return; }
+        var cap = parseInt(document.getElementById('modalCap').value, 10) || 0;
+        var src = sourceList.find(function (x) { return x.id === srcId; });
+        if (!src) return;
+        var remain = getSourceRemain(src);
+        if (cap > remain) { alert('容量分配不能超过存储源剩余容量（' + remain + ' GiB）'); return; }
+        var bindings = [{ storageSourceId: srcId, capacity: cap }];
+        if (editId) {
+          var v = volumeList.find(function (x) { return x.id === editId; });
+          if (v) {
+            v.name = name;
+            v.bindings = bindings;
+          }
+        } else {
+          var newId = 'vol' + Date.now();
+          volumeList.push({ id: newId, name: name, creator: 'admin', createTime: new Date().toLocaleString(), bindings: bindings });
+        }
+        localStorage.setItem('storageVolumeList', JSON.stringify(volumeList));
+        document.getElementById('editModal').classList.add('is-hidden');
+        renderTable();
+      });
+
+      renderTable();
+    })();
+  </script>
+</body>
+</html>

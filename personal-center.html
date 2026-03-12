@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人中心 - 平台管理系统</title>
+  <style>
+    :root {
+      --primary: #1677ff;
+      --bg: #f5f7fb;
+      --card: #fff;
+      --border: rgba(5,5,5,.10);
+      --text: rgba(0,0,0,.88);
+      --text2: rgba(0,0,0,.65);
+      --radius: 10px;
+      --shadow: 0 6px 20px rgba(0,0,0,.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+    .app-header { height: 64px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 48px; }
+    .app-logo { font-size: 18px; font-weight: 600; color: var(--primary); white-space: nowrap; }
+    .top-nav-container { display: flex; gap: 4px; flex: 1; }
+    .top-nav-item { padding: 8px 16px; text-decoration: none; color: var(--text); border-radius: 6px; font-size: 14px; }
+    .app-body { flex: 1; display: flex; min-height: 0; }
+    .app-sider { width: 220px; background: var(--card); border-right: 1px solid var(--border); }
+    .app-sider.is-hidden { width: 0; min-width: 0; opacity: 0; overflow: hidden; }
+    .app-content { flex: 1; padding: 24px; overflow: auto; }
+    .pc-page { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 32px; max-width: auto; }
+    .pc-title { font-size: 20px; font-weight: 600; margin-bottom: 24px; color: var(--text); }
+    .form-section { margin-bottom: 28px; }
+    .form-section-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: var(--text); padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 16px; }
+    .form-row.full { grid-template-columns: 1fr; }
+    .form-item { margin-bottom: 16px; }
+    .form-row .form-item { margin-bottom: 0; }
+    .form-label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--text); }
+    .form-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+    .form-input:focus { outline: none; border-color: var(--primary); }
+    .form-input[readonly] { background: #f5f5f5; color: var(--text2); cursor: default; }
+    .form-actions { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; gap: 12px; }
+    .btn { height: 36px; padding: 0 20px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #4096ff; }
+    .btn-default { background: var(--card); border: 1px solid var(--border); color: var(--text); text-decoration: none; }
+    .btn-default:hover { background: #fafafa; border-color: var(--primary); color: var(--primary); }
+    .parttime-list { font-size: 14px; color: var(--text); }
+    .parttime-list .parttime-item { padding: 4px 0; }
+    .parttime-list .parttime-item:empty::before { content: '无'; color: var(--text2); }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="app-logo">平台管理系统</div>
+      <nav class="top-nav-container"></nav>
+    </header>
+    <div class="app-body">
+      <aside class="app-sider is-hidden" data-sider="base-control">
+        <nav class="side-nav-container"></nav>
+      </aside>
+      <main id="app-main" class="app-content">
+        <div class="pc-page">
+          <h1 class="pc-title">个人中心</h1>
+          <form id="personalCenterForm">
+            <input type="hidden" id="userId">
+            <div class="form-section">
+              <div class="form-section-title">个人信息</div>
+              <div class="form-row">
+                <div class="form-item">
+                  <label class="form-label">账号</label>
+                  <input type="text" class="form-input" id="account" readonly>
+                </div>
+                <div class="form-item">
+                  <label class="form-label">姓名</label>
+                  <input type="text" class="form-input" id="name" readonly>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-item">
+                  <label class="form-label">手机号码</label>
+                  <input type="text" class="form-input" id="phone" placeholder="请输入手机号码">
+                </div>
+                <div class="form-item">
+                  <label class="form-label">电子邮箱</label>
+                  <input type="email" class="form-input" id="email" placeholder="请输入电子邮箱">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-item">
+                  <label class="form-label">所属组织</label>
+                  <input type="text" class="form-input" id="orgName" readonly>
+                </div>
+                <div class="form-item">
+                  <label class="form-label">岗位</label>
+                  <input type="text" class="form-input" id="position" readonly>
+                </div>
+              </div>
+              <div class="form-row full">
+                <div class="form-item">
+                  <label class="form-label">兼职组织</label>
+                  <div class="parttime-list" id="parttimeOrgList"></div>
+                </div>
+              </div>
+              <div class="form-row full">
+                <div class="form-item">
+                  <label class="form-label">兼职岗位</label>
+                  <div class="parttime-list" id="parttimePosList"></div>
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">保存修改</button>
+              <a href="workbench.html" class="btn btn-default">返回</a>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="./common.js"></script>
+  <script>
+    initLayout();
+
+    (function () {
+      var orgData = [
+        { id: 'org-1', name: '总公司', children: [
+          { id: 'org-2', name: '技术研发部', children: [
+            { id: 'org-4', name: '前端组', children: [] },
+            { id: 'org-5', name: '后端组', children: [] }
+          ]},
+          { id: 'org-3', name: '市场部', children: [
+            { id: 'org-6', name: '品牌推广组', children: [] }
+          ]}
+        ]}
+      ];
+
+      var orgIdToName = {};
+      function buildOrgMap(nodes) {
+        nodes.forEach(function (n) {
+          orgIdToName[n.id] = n.name;
+          if (n.children && n.children.length) buildOrgMap(n.children);
+        });
+      }
+      buildOrgMap(orgData);
+
+      var defaultUserList = [
+        { id: 'u1', account: 'admin', name: '管理员', orgId: 'org-1', role: '超级管理员', desc: '系统管理员', creator: 'system', enabled: true, email: '', phone: '', position: '', parttimes: [] },
+        { id: 'u2', account: 'ceo', name: '张总', orgId: 'org-1', role: '总裁', desc: '公司负责人', creator: 'admin', enabled: true, email: '', phone: '', position: '', parttimes: [] },
+        { id: 'u3', account: 'tech1', name: '李工', orgId: 'org-2', role: '技术经理', desc: '研发负责人', creator: 'admin', enabled: true, email: '', phone: '', position: '', parttimes: [] },
+        { id: 'u4', account: 'dev1', name: '王开发', orgId: 'org-2', role: '开发工程师', desc: '后端开发', creator: 'tech1', enabled: true, email: '', phone: '', position: '', parttimes: [] },
+        { id: 'u5', account: 'mkt1', name: '赵经理', orgId: 'org-3', role: '市场经理', desc: '市场负责人', creator: 'admin', enabled: true, email: '', phone: '', position: '', parttimes: [] },
+        { id: 'u6', account: 'fe1', name: '孙前端', orgId: 'org-4', role: '前端工程师', desc: '前端开发', creator: 'tech1', enabled: true, email: '', phone: '', position: '', parttimes: [] }
+      ];
+
+      var userList = JSON.parse(localStorage.getItem('userList') || 'null');
+      if (!userList || userList.length === 0) {
+        userList = JSON.parse(JSON.stringify(defaultUserList));
+        localStorage.setItem('userList', JSON.stringify(userList));
+      }
+
+      var currentUserId = localStorage.getItem('currentUserId') || 'u1';
+      var user = userList.find(function (u) { return u.id === currentUserId; });
+      if (!user) {
+        user = userList[0] || defaultUserList[0];
+        currentUserId = user.id;
+      }
+
+      function loadUser() {
+        document.getElementById('userId').value = user.id;
+        document.getElementById('account').value = user.account || '';
+        document.getElementById('name').value = user.name || '';
+        document.getElementById('phone').value = user.phone || '';
+        document.getElementById('email').value = user.email || '';
+        document.getElementById('orgName').value = orgIdToName[user.orgId] || '-';
+        document.getElementById('position').value = user.position || '-';
+
+        var parttimes = user.parttimes || [];
+        var orgListEl = document.getElementById('parttimeOrgList');
+        var posListEl = document.getElementById('parttimePosList');
+        if (parttimes.length === 0) {
+          orgListEl.innerHTML = '<span class="parttime-item">无</span>';
+          posListEl.innerHTML = '<span class="parttime-item">无</span>';
+        } else {
+          orgListEl.innerHTML = parttimes.map(function (pt) {
+            return '<div class="parttime-item">' + (orgIdToName[pt.orgId] || pt.orgId || '-') + '</div>';
+          }).join('');
+          posListEl.innerHTML = parttimes.map(function (pt) {
+            return '<div class="parttime-item">' + (pt.position || '-') + '</div>';
+          }).join('');
+        }
+      }
+
+      document.getElementById('personalCenterForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var phone = document.getElementById('phone').value.trim();
+        var email = document.getElementById('email').value.trim();
+
+        var u = userList.find(function (x) { return x.id === currentUserId; });
+        if (u) {
+          u.phone = phone;
+          u.email = email;
+          localStorage.setItem('userList', JSON.stringify(userList));
+          user = u;
+          alert('保存成功');
+        }
+      });
+
+      loadUser();
+    })();
+  </script>
+</body>
+</html>

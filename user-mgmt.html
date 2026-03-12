@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>用户管理 - 平台管理系统</title>
+  <style>
+    :root {
+      --primary: #1677ff;
+      --bg: #f5f7fb;
+      --card: #fff;
+      --border: rgba(5,5,5,.10);
+      --text: rgba(0,0,0,.88);
+      --text2: rgba(0,0,0,.65);
+      --radius: 10px;
+      --shadow: 0 6px 20px rgba(0,0,0,.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+    .app-header { height: 64px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 48px; }
+    .app-logo { font-size: 18px; font-weight: 600; color: var(--primary); white-space: nowrap; }
+    .top-nav-container { display: flex; gap: 4px; flex: 1; }
+    .top-nav-item { padding: 8px 16px; text-decoration: none; color: var(--text); border-radius: 6px; font-size: 14px; transition: background .2s, color .2s; position: relative; }
+    .top-nav-item:hover { background: rgba(22, 119, 255, .08); color: var(--primary); }
+    .top-nav-item.is-active { color: var(--primary); font-weight: 500; background: #e6f4ff; }
+    .top-nav-item.is-active::after { content: ''; position: absolute; bottom: 0; left: 16px; right: 16px; height: 2px; background: var(--primary); border-radius: 1px; }
+    .app-body { flex: 1; display: flex; min-height: 0; }
+    .app-sider { width: 220px; background: var(--card); border-right: 1px solid var(--border); padding: 16px 0; flex-shrink: 0; }
+    .app-sider.is-hidden { width: 0; min-width: 0; opacity: 0; overflow: hidden; padding: 0; border-right: none; }
+    .side-nav-container { display: flex; flex-direction: column; gap: 2px; }
+    .side-nav-item { padding: 10px 20px; text-decoration: none; color: var(--text2); font-size: 14px; border-radius: 6px; border-left: 3px solid transparent; transition: all .2s; }
+    .side-nav-item:hover { color: var(--primary); background: rgba(22, 119, 255, .06); }
+    .side-nav-item.is-active { color: var(--primary); background: #e6f4ff; font-weight: 500; border-left-color: var(--primary); }
+    .app-content { flex: 1; padding: 24px; overflow: auto; display: flex; flex-direction: column; }
+    .user-page { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .user-page-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: var(--text); }
+    .user-filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+    .user-search { width: 220px; height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+    .user-search:focus { outline: none; border-color: var(--primary); }
+    .user-filter-org { min-width: 160px; height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+    .user-filter-org:focus { outline: none; border-color: var(--primary); }
+    .btn { height: 32px; padding: 0 16px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; transition: background .2s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #4096ff; }
+    .btn-text { background: transparent; color: var(--primary); }
+    .btn-text:hover { background: rgba(22, 119, 255, .08); }
+    .btn-danger { background: transparent; color: #ff4d4f; }
+    .btn-danger:hover { background: rgba(255, 77, 79, .08); }
+    .user-table-wrap { flex: 1; overflow: auto; }
+    .user-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .user-table th, .user-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+    .user-table th { background: #fafafa; color: var(--text2); font-weight: 500; white-space: nowrap; }
+    .user-table td { color: var(--text); }
+    .user-table .col-ops { white-space: nowrap; }
+    .user-table .col-ops .btn { padding: 0 8px; margin-right: 8px; }
+    .status-on { color: #52c41a; }
+    .status-off { color: #999; }
+    .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-mask.is-hidden { display: none; }
+    .modal { background: var(--card); border-radius: var(--radius); box-shadow: 0 12px 48px rgba(0,0,0,.15); width: 520px; max-width: 90vw; max-height: 90vh; overflow: auto; }
+    .modal-header { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 16px; font-weight: 600; }
+    .modal-body { padding: 24px; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+    .role-config-section { margin-bottom: 20px; }
+    .role-config-section:last-of-type { margin-bottom: 0; }
+    .role-config-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text); }
+    .role-checkbox-group { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+    .role-checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+    .role-checkbox-item input { cursor: pointer; }
+    .space-role-block { padding: 12px; background: #fafafa; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border); }
+    .space-role-block-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .space-role-ws { min-width: 160px; height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+    .space-role-block .btn-remove-block { padding: 0 8px; font-size: 12px; color: var(--text2); }
+    .space-role-block .btn-remove-block:hover { color: #ff4d4f; }
+    .btn-add-space { height: 32px; padding: 0 16px; border: 1px dashed var(--border); border-radius: 6px; background: #fafafa; color: var(--primary); cursor: pointer; font-size: 14px; }
+    .btn-add-space:hover { border-color: var(--primary); }
+    .btn-default { background: var(--card); border: 1px solid var(--border); color: var(--text); }
+    .btn-default:hover { background: #fafafa; border-color: var(--primary); color: var(--primary); }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="app-logo">平台管理系统</div>
+      <nav class="top-nav-container"></nav>
+    </header>
+    <div class="app-body">
+      <aside class="app-sider is-hidden" data-sider="base-control">
+        <nav class="side-nav-container"></nav>
+      </aside>
+      <main id="app-main" class="app-content">
+        <div class="user-page">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h1 class="user-page-title" style="margin-bottom:0;">用户管理</h1>
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="btn btn-default" id="btnRefresh">刷新</button>
+              <a href="user-create.html" class="btn btn-primary">新增用户</a>
+            </div>
+          </div>
+          <div class="user-filters">
+            <input type="text" class="user-search" id="userSearch" placeholder="按用户名称或账号搜索">
+            <select class="user-filter-org" id="orgFilter">
+              <option value="">全部组织</option>
+            </select>
+          </div>
+          <div class="user-table-wrap">
+            <table class="user-table">
+              <thead>
+                <tr>
+                  <th>账号</th>
+                  <th>姓名</th>
+                  <th>所属组织</th>
+                  <th>角色</th>
+                  <th>描述</th>
+                  <th>创建人</th>
+                  <th>启用</th>
+                  <th class="col-ops">操作</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div class="modal-mask is-hidden" id="addRoleModal">
+    <div class="modal">
+      <div class="modal-header">添加角色</div>
+      <div class="modal-body">
+        <div class="role-config-section">
+          <div class="role-config-title">平台角色选择</div>
+          <div class="role-checkbox-group" id="platformRoleGroup"></div>
+        </div>
+        <div class="role-config-section">
+          <div class="role-config-title">应用角色选择</div>
+          <div class="role-checkbox-group" id="appRoleGroup"></div>
+        </div>
+        <div class="role-config-section">
+          <div class="role-config-title">开发角色选择</div>
+          <div id="spaceRoleBlocks"></div>
+          <button type="button" class="btn btn-add-space" id="btnAddSpaceBlock">+ 添加工作空间角色</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" id="addRoleCancel">取消</button>
+        <button type="button" class="btn btn-primary" id="addRoleConfirm">确定</button>
+      </div>
+    </div>
+  </div>
+  <script src="./common.js"></script>
+  <script>
+    initLayout();
+
+    (function () {
+      var orgData = [
+        { id: 'org-1', name: '总公司', children: [
+          { id: 'org-2', name: '技术研发部', children: [
+            { id: 'org-4', name: '前端组', children: [
+              { id: 'org-7', name: 'UI 小组', children: [] }
+            ]},
+            { id: 'org-5', name: '后端组', children: [] }
+          ]},
+          { id: 'org-3', name: '市场部', children: [
+            { id: 'org-6', name: '品牌推广组', children: [] }
+          ]}
+        ]}
+      ];
+
+      var orgIdToName = {};
+      function buildOrgMap(nodes) {
+        nodes.forEach(function (n) {
+          orgIdToName[n.id] = n.name;
+          if (n.children && n.children.length) buildOrgMap(n.children);
+        });
+      }
+      buildOrgMap(orgData);
+
+      function flattenOrgWithDepth(nodes, list, depth) {
+        list = list || [];
+        depth = depth || 0;
+        nodes.forEach(function (n) {
+          list.push({ id: n.id, name: n.name, depth: depth });
+          if (n.children && n.children.length) flattenOrgWithDepth(n.children, list, depth + 1);
+        });
+        return list;
+      }
+
+      var orgListFlat = flattenOrgWithDepth(orgData);
+      var indentChar = '\u3000\u3000';
+
+      function renderOrgOptions(selectEl, selectedId) {
+        selectEl.innerHTML = '<option value="">全部组织</option>';
+        orgListFlat.forEach(function (o) {
+          var opt = document.createElement('option');
+          opt.value = o.id;
+          opt.textContent = (indentChar.repeat(o.depth)) + o.name;
+          if (selectedId && o.id === selectedId) opt.selected = true;
+          selectEl.appendChild(opt);
+        });
+      }
+
+      var defaultUserList = [
+        { id: 'u1', account: 'admin', name: '管理员', orgId: 'org-1', role: '超级管理员', desc: '系统管理员', creator: 'system', enabled: true, email: '', phone: '', position: '', parttimes: [] },
+        { id: 'u2', account: 'ceo', name: '张总', orgId: 'org-1', role: '总裁', desc: '公司负责人', creator: 'admin', enabled: true, email: '', phone: '', position: '', parttimes: [] },
+        { id: 'u3', account: 'tech1', name: '李工', orgId: 'org-2', role: '技术经理', desc: '研发负责人', creator: 'admin', enabled: true, email: '', phone: '', position: '', parttimes: [] },
+        { id: 'u4', account: 'dev1', name: '王开发', orgId: 'org-2', role: '开发工程师', desc: '后端开发', creator: 'tech1', enabled: true, email: '', phone: '', position: '', parttimes: [] },
+        { id: 'u5', account: 'mkt1', name: '赵经理', orgId: 'org-3', role: '市场经理', desc: '市场负责人', creator: 'admin', enabled: true, email: '', phone: '', position: '', parttimes: [] },
+        { id: 'u6', account: 'fe1', name: '孙前端', orgId: 'org-4', role: '前端工程师', desc: '前端开发', creator: 'tech1', enabled: true, email: '', phone: '', position: '', parttimes: [] }
+      ];
+      var userList = JSON.parse(localStorage.getItem('userList') || 'null');
+      if (!userList || userList.length === 0) {
+        userList = JSON.parse(JSON.stringify(defaultUserList));
+        localStorage.setItem('userList', JSON.stringify(userList));
+      }
+
+      renderOrgOptions(document.getElementById('orgFilter'));
+
+      function filterUsers() {
+        var keyword = (document.getElementById('userSearch').value || '').trim().toLowerCase();
+        var orgId = document.getElementById('orgFilter').value;
+        return userList.filter(function (u) {
+          var matchSearch = !keyword ||
+            (u.account || '').toLowerCase().indexOf(keyword) !== -1 ||
+            (u.name || '').toLowerCase().indexOf(keyword) !== -1;
+          var matchOrg = !orgId || u.orgId === orgId;
+          return matchSearch && matchOrg;
+        });
+      }
+
+      function renderTable() {
+        var list = filterUsers();
+        var tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = list.map(function (u) {
+          var statusClass = u.enabled ? 'status-on' : 'status-off';
+          var statusText = u.enabled ? '是' : '否';
+          return '<tr data-id="' + u.id + '">' +
+            '<td>' + (u.account || '-') + '</td>' +
+            '<td>' + (u.name || '-') + '</td>' +
+            '<td>' + (orgIdToName[u.orgId] || '-') + '</td>' +
+            '<td>' + (u.role || '-') + '</td>' +
+            '<td>' + (u.desc || '-') + '</td>' +
+            '<td>' + (u.creator || '-') + '</td>' +
+            '<td><span class="' + statusClass + '">' + statusText + '</span></td>' +
+            '<td class="col-ops">' +
+            '<a href="user-edit.html?id=' + encodeURIComponent(u.id) + '" class="btn btn-text">编辑</a>' +
+            '<button type="button" class="btn btn-text" data-action="add-role" data-id="' + u.id + '">添加角色</button>' +
+            '<button type="button" class="btn btn-danger" data-action="delete" data-id="' + u.id + '">删除</button>' +
+            '</td></tr>';
+        }).join('');
+        tbody.querySelectorAll('[data-action="add-role"]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            openAddRoleModal(btn.dataset.id);
+          });
+        });
+        tbody.querySelectorAll('[data-action="delete"]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            if (confirm('确定要删除该用户吗？')) {
+              userList = userList.filter(function (x) { return x.id !== btn.dataset.id; });
+              localStorage.setItem('userList', JSON.stringify(userList));
+              renderTable();
+            }
+          });
+        });
+      }
+
+      var platformRoles = [
+        { name: '组织管理员', value: '组织管理员' },
+        { name: '组织用户', value: '组织用户', defaultChecked: true, disabled: true }
+      ];
+      var appRoles = [
+        { name: '项目经理', value: '项目经理' }
+      ];
+      var spaceRoles = [
+        { name: '空间管理员', value: '空间管理员' },
+        { name: '空间成员', value: '空间成员', defaultChecked: true, disabled: true },
+        { name: '开发工程师', value: '开发工程师' }
+      ];
+      var workspaceList = [
+        { id: 'ws1', name: '研发工作空间' },
+        { id: 'ws2', name: '产品工作空间' },
+        { id: 'ws3', name: '市场工作空间' }
+      ];
+
+      var currentAddRoleUserId = null;
+
+      function renderPlatformRoleGroup() {
+        var g = document.getElementById('platformRoleGroup');
+        g.innerHTML = platformRoles.map(function (r) {
+          var checked = r.defaultChecked ? ' checked' : '';
+          var disabled = r.disabled ? ' disabled' : '';
+          return '<label class="role-checkbox-item"><input type="checkbox" name="platformRole" value="' + r.value + '"' + checked + disabled + '>' + r.name + '</label>';
+        }).join('');
+      }
+      function renderAppRoleGroup() {
+        var g = document.getElementById('appRoleGroup');
+        g.innerHTML = appRoles.map(function (r) {
+          var checked = r.defaultChecked ? ' checked' : '';
+          var disabled = r.disabled ? ' disabled' : '';
+          return '<label class="role-checkbox-item"><input type="checkbox" name="appRole" value="' + r.value + '"' + checked + disabled + '>' + r.name + '</label>';
+        }).join('');
+      }
+
+      function addSpaceRoleBlock(wsId, selectedRoles) {
+        selectedRoles = selectedRoles || [];
+        var container = document.getElementById('spaceRoleBlocks');
+        var block = document.createElement('div');
+        block.className = 'space-role-block';
+        var wsSelect = workspaceList.map(function (ws) {
+          return '<option value="' + ws.id + '"' + (wsId === ws.id ? ' selected' : '') + '>' + ws.name + '</option>';
+        }).join('');
+        block.innerHTML = '<div class="space-role-block-head">' +
+          '<select class="space-role-ws">' + wsSelect + '</select>' +
+          '<button type="button" class="btn btn-text btn-remove-block">移除</button>' +
+          '</div>' +
+          '<div class="role-checkbox-group">' +
+          spaceRoles.map(function (r) {
+            var checked = r.defaultChecked || selectedRoles.indexOf(r.value) !== -1 ? ' checked' : '';
+            var disabled = r.disabled ? ' disabled' : '';
+            return '<label class="role-checkbox-item"><input type="checkbox" name="spaceRole" value="' + r.value + '"' + checked + disabled + '>' + r.name + '</label>';
+          }).join('') +
+          '</div>';
+        block.querySelector('.btn-remove-block').addEventListener('click', function () { block.remove(); });
+        container.appendChild(block);
+      }
+
+      function openAddRoleModal(userId) {
+        currentAddRoleUserId = userId;
+        renderPlatformRoleGroup();
+        renderAppRoleGroup();
+        var blocks = document.getElementById('spaceRoleBlocks');
+        blocks.innerHTML = '';
+        addSpaceRoleBlock(workspaceList[0] ? workspaceList[0].id : '', []);
+        document.getElementById('addRoleModal').classList.remove('is-hidden');
+      }
+
+      document.getElementById('btnAddSpaceBlock').addEventListener('click', function () {
+        addSpaceRoleBlock(workspaceList[0] ? workspaceList[0].id : '', []);
+      });
+
+      document.getElementById('addRoleCancel').addEventListener('click', function () {
+        document.getElementById('addRoleModal').classList.add('is-hidden');
+      });
+
+      document.getElementById('addRoleConfirm').addEventListener('click', function () {
+        var tenantChecked = [];
+        document.querySelectorAll('#platformRoleGroup input[name="platformRole"]:checked').forEach(function (cb) {
+          tenantChecked.push(cb.value);
+        });
+        document.querySelectorAll('#appRoleGroup input[name="appRole"]:checked').forEach(function (cb) {
+          tenantChecked.push(cb.value);
+        });
+        if (tenantChecked.indexOf('组织用户') === -1) tenantChecked.push('组织用户');
+        var spaceRolesData = [];
+        document.querySelectorAll('.space-role-block').forEach(function (block) {
+          var wsSel = block.querySelector('.space-role-ws');
+          var wsId = wsSel ? wsSel.value : '';
+          var wsName = workspaceList.find(function (w) { return w.id === wsId; });
+          var roles = [];
+          block.querySelectorAll('input[name="spaceRole"]:checked').forEach(function (cb) { roles.push(cb.value); });
+          if (roles.indexOf('空间成员') === -1) roles.push('空间成员');
+          if (wsId && roles.length > 0) {
+            spaceRolesData.push({ workspaceId: wsId, workspaceName: wsName ? wsName.name : '', roles: roles });
+          }
+        });
+        var user = userList.find(function (u) { return u.id === currentAddRoleUserId; });
+        if (user) {
+          user.tenantRoles = user.tenantRoles || [];
+          user.spaceRoles = user.spaceRoles || [];
+          tenantChecked.forEach(function (r) {
+            if (user.tenantRoles.indexOf(r) === -1) user.tenantRoles.push(r);
+          });
+          spaceRolesData.forEach(function (sr) {
+            var exist = user.spaceRoles.find(function (s) { return s.workspaceId === sr.workspaceId; });
+            if (exist) {
+              sr.roles.forEach(function (r) {
+                if (exist.roles.indexOf(r) === -1) exist.roles.push(r);
+              });
+            } else {
+              user.spaceRoles.push(sr);
+            }
+          });
+          localStorage.setItem('userList', JSON.stringify(userList));
+        }
+        document.getElementById('addRoleModal').classList.add('is-hidden');
+        renderTable();
+      });
+
+      document.getElementById('userSearch').addEventListener('input', renderTable);
+      document.getElementById('userSearch').addEventListener('keyup', renderTable);
+      document.getElementById('orgFilter').addEventListener('change', renderTable);
+
+      document.getElementById('btnRefresh').addEventListener('click', function () {
+        userList = JSON.parse(localStorage.getItem('userList') || 'null');
+        if (!userList || userList.length === 0) {
+          userList = JSON.parse(JSON.stringify(defaultUserList));
+          localStorage.setItem('userList', JSON.stringify(userList));
+        }
+        renderTable();
+      });
+
+      renderTable();
+    })();
+  </script>
+</body>
+</html>
