@@ -22,6 +22,13 @@
 
   const BASE_CONTROL_PAGES = ['ops-mgmt.html', 'org-mgmt.html', 'user-mgmt.html', 'user-create.html', 'user-edit.html', 'user-group-mgmt.html', 'role-mgmt.html', 'role-create.html', 'role-edit.html', 'resource-pool-mgmt.html', 'storage-volume-mgmt.html'];
 
+  function toSameDirUrl(fileName) {
+    const href = (window.location.href || '').split('#')[0];
+    const baseIndex = href.lastIndexOf('/');
+    const base = baseIndex === -1 ? href : href.slice(0, baseIndex + 1);
+    return base + fileName;
+  }
+
   /**
    * 获取当前页面文件名
    * 支持 file:// 与 http(s):// 协议
@@ -80,8 +87,8 @@
       wrap.className = 'header-user-wrap';
       wrap.innerHTML = '<div class="header-user-avatar" title="用户">👤</div>' +
         '<div class="header-user-dropdown">' +
-        '<a href="personal-center.html">个人中心</a>' +
-        '<a href="ops-mgmt.html">基础管控管理</a>' +
+        '<a href="' + toSameDirUrl('personal-center.html') + '">个人中心</a>' +
+        '<a href="' + toSameDirUrl('ops-mgmt.html') + '">基础管控管理</a>' +
         '</div>';
       header.appendChild(wrap);
 
