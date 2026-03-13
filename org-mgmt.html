@@ -89,6 +89,7 @@
     .modal-body { padding: 24px; }
     .form-item { margin-bottom: 16px; }
     .form-item:last-child { margin-bottom: 0; }
+    .form-item-inline { display: flex; align-items: center; gap: 8px; }
     .form-label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--text); }
     .form-input, .form-select, .form-textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
     .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary); }
@@ -96,6 +97,30 @@
     .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
     .btn-default { background: var(--card); border: 1px solid var(--border); color: var(--text); }
     .btn-default:hover { background: #fafafa; border-color: var(--primary); color: var(--primary); }
+    .modal-lg { width: 960px; max-width: 92vw; }
+    .picker-wrap { display: grid; grid-template-columns: 1fr 280px; gap: 16px; min-height: 520px; }
+    .picker-left { display: flex; flex-direction: column; gap: 12px; }
+    .picker-tabs { display: flex; gap: 12px; border-bottom: 1px solid var(--border); }
+    .picker-tab { padding: 8px 12px; border-radius: 6px 6px 0 0; background: transparent; border: none; cursor: pointer; color: var(--text2); }
+    .picker-tab.is-active { background: #e6f4ff; color: var(--primary); }
+    .picker-search { width: 320px; height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px; }
+    .picker-table { flex: 1; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+    .picker-right { border-left: 1px solid var(--border); padding-left: 16px; display: flex; flex-direction: column; }
+    .picker-right-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .selected-list { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 8px; }
+    .selected-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+    .selected-item .remove { background: transparent; border: none; color: var(--text2); cursor: pointer; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip { padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border); background: #fafafa; font-size: 12px; color: var(--text2); }
+    .picker-expand-btn { width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 2px; background: var(--card); color: var(--text2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; line-height: 1; padding: 0; }
+    .picker-expand-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .picker-expand-btn.is-disabled { opacity: .45; cursor: default; }
+    .picker-expand-btn.is-disabled:hover { border-color: var(--border); color: var(--text2); }
+    .picker-expand-row td { padding: 0; }
+    .picker-expand-wrap { padding: 12px 16px; background: #fafafa; border-top: 1px solid var(--border); }
+    .picker-expand-wrap .org-table th, .picker-expand-wrap .org-table td { padding: 12px 16px; }
+    .picker-subsection { margin-top: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .picker-subsection:first-child { margin-top: 0; }
   </style>
 </head>
 <body>
@@ -187,10 +212,57 @@
           <label class="form-label">描述</label>
           <textarea class="form-textarea" id="modalDesc" placeholder="请输入描述"></textarea>
         </div>
+        <div class="form-item">
+          <label class="form-label">选择资源</label>
+          <div class="form-item-inline">
+            <div id="resSummary" class="form-input" style="flex:1; display:flex; align-items:center; min-height:32px;">
+              <span id="resSummaryText" style="color: var(--text2);">未选择</span>
+            </div>
+            <button type="button" class="btn btn-default" id="btnPickRes">选择</button>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" id="modalCancel">取消</button>
         <button type="button" class="btn btn-primary" id="modalConfirm">确定</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-mask is-hidden" id="resPickerModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">选择资源</div>
+      <div class="modal-body">
+        <div class="picker-wrap">
+          <div class="picker-left">
+            <div class="picker-tabs">
+              <button type="button" class="picker-tab is-active" data-tab="pool">资源池</button>
+              <button type="button" class="picker-tab" data-tab="volume">存储卷</button>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <input type="text" class="picker-search" id="pickerSearch" placeholder="搜索名称">
+              <div id="pickerCount" style="font-size:12px;color:var(--text2);"></div>
+            </div>
+            <div class="picker-table">
+              <table class="org-table">
+                <thead id="pickerThead"></thead>
+                <tbody id="pickerTbody"></tbody>
+              </table>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;align-items:center;margin-top:8px;">
+              <button type="button" class="btn btn-default" id="pickerPrev">上一页</button>
+              <span id="pickerPager" style="font-size:12px;color:var(--text2);"></span>
+              <button type="button" class="btn btn-default" id="pickerNext">下一页</button>
+            </div>
+          </div>
+          <div class="picker-right">
+            <div class="picker-right-title">已选</div>
+            <div class="selected-list" id="selectedList"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" id="pickerCancel">取消</button>
+        <button type="button" class="btn btn-primary" id="pickerOk">确定</button>
       </div>
     </div>
   </div>
@@ -449,6 +521,229 @@
       });
 
       selectOrg('org-1');
+
+      var resPools = [
+        { id: 'p1', name: '齐鲁医院资源池', desc: '-', policy: '组织本级所有项目和新增项目', cpu: '251/256', mem: '1007/1024', gpu: '0/2', children: [
+          { id: 'c1', name: 'shsa', desc: '-', cpu: '-', mem: '-', gpu: '-' },
+          { id: 'c2', name: 'test111', desc: '-', cpu: '-', mem: '-', gpu: '-' },
+          { id: 'c3', name: 'test11', desc: '-', cpu: '-', mem: '-', gpu: '-' },
+          { id: 'c4', name: 'public', desc: '-', cpu: '-', mem: '-', gpu: '-' },
+          { id: 'c5', name: 'UA资源池', desc: '-', cpu: '-', mem: '-', gpu: '-' },
+          { id: 'c6', name: 'AI产线无GPU资源池', desc: '-', cpu: '-', mem: '-', gpu: '-' }
+        ] },
+        { id: 'p2', name: 'UAI资源池', desc: '-', policy: '组织及下级组织的所有项目和新增项目', cpu: '120/256', mem: '600/1024', gpu: '1/4', children: [] },
+        { id: 'p3', name: 'public', desc: '-', policy: '组织本级所有项目和新增项目', cpu: '80/200', mem: '300/512', gpu: '0/0', children: [] }
+      ];
+      var resVolumes = [
+        { id: 'v1', name: '省区大客户服务组存储卷', cap: '10.00GB/10.00GB' },
+        { id: 'v2', name: 'Purchase', cap: '94.81GB/100.00GB' },
+        { id: 'v3', name: 'UAI默认存储卷', cap: '37.85GB/100.00GB' }
+      ];
+      var resSelected = { pool: {}, volume: {} };
+      var resCommitted = { pool: {}, volume: {} };
+      var poolExpanded = {};
+      var currentTab = 'pool';
+      var pageIndex = 1;
+      var pageSize = 10;
+
+      function normalizePoolSelection(map) {
+        var next = {};
+        Object.keys(map || {}).forEach(function (id) {
+          if (id.indexOf(':') !== -1) return;
+          if (resPools.some(function (p) { return p.id === id; })) next[id] = true;
+        });
+        return next;
+      }
+
+      function openResPicker() {
+        currentTab = 'pool';
+        pageIndex = 1;
+        resSelected.pool = normalizePoolSelection(resCommitted.pool);
+        resSelected.volume = Object.assign({}, resCommitted.volume);
+        poolExpanded = {};
+        document.getElementById('pickerSearch').value = '';
+        switchTab('pool');
+        document.getElementById('resPickerModal').classList.remove('is-hidden');
+      }
+      function closeResPicker() {
+        document.getElementById('resPickerModal').classList.add('is-hidden');
+      }
+      function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.picker-tab').forEach(function (el) {
+          el.classList.toggle('is-active', el.dataset.tab === tab);
+        });
+        pageIndex = 1;
+        renderPickerTable();
+        renderSelectedList();
+      }
+      function getActiveData() {
+        var kw = (document.getElementById('pickerSearch').value || '').trim().toLowerCase();
+        var src = currentTab === 'pool' ? resPools : resVolumes;
+        if (!kw) return src.slice();
+        if (currentTab !== 'pool') {
+          return src.filter(function (x) { return (x.name || '').toLowerCase().indexOf(kw) !== -1; });
+        }
+        return src.filter(function (x) { return (x.name || '').toLowerCase().indexOf(kw) !== -1; });
+      }
+
+      function getPoolLabelById(id) {
+        if (id.indexOf(':') === -1) {
+          var p = resPools.find(function (x) { return x.id === id; });
+          return p ? p.name : id;
+        }
+        var parts = id.split(':');
+        var pid = parts[0];
+        var cid = parts[1];
+        var p2 = resPools.find(function (x) { return x.id === pid; });
+        if (!p2) return id;
+        var c2 = (p2.children || []).find(function (x) { return x.id === cid; });
+        if (!c2) return p2.name + ' / ' + cid;
+        return p2.name + ' / ' + c2.name;
+      }
+
+      function renderPickerTable() {
+        var thead = document.getElementById('pickerThead');
+        var tbody = document.getElementById('pickerTbody');
+        var rows = getActiveData();
+        var total = rows.length;
+        var start = (pageIndex - 1) * pageSize;
+        var pageRows = rows.slice(start, start + pageSize);
+        if (currentTab === 'pool') {
+          thead.innerHTML = '<tr><th style="width:36px;"></th><th style="width:48px;"></th><th>资源池名称</th><th>资源池描述</th><th>绑定策略</th></tr>';
+          tbody.innerHTML = pageRows.map(function (r) {
+            var hasChildren = !!(r.children && r.children.length);
+            var expanded = !!poolExpanded[r.id];
+            var btnClass = 'picker-expand-btn' + (hasChildren ? '' : ' is-disabled');
+            var btnText = expanded ? '−' : '+';
+            var checked = !!resSelected.pool[r.id];
+            var policyText = (r.policy || '-');
+            var baseRow = '<tr data-id="' + r.id + '" data-kind="pool-parent">' +
+              '<td>' + (hasChildren ? '<button type="button" class="' + btnClass + '" data-action="toggle-parent" data-id="' + r.id + '">' + btnText + '</button>' : '<button type="button" class="' + btnClass + '" tabindex="-1">+</button>') + '</td>' +
+              '<td><input type="checkbox" class="picker-ck" data-type="pool" data-id="' + r.id + '" ' + (checked ? 'checked' : '') + '></td>' +
+              '<td>' + (r.name || '-') + '</td>' +
+              '<td>' + (r.desc || '-') + '</td>' +
+              '<td>' + policyText + '</td>' +
+              '</tr>';
+            if (!hasChildren || !expanded) return baseRow;
+            var metricTable = '<div class="picker-subsection"><table class="org-table" style="margin:0;">' +
+              '<thead><tr><th>名称</th><th>CPU(核)</th><th>内存(GiB)</th><th>GPU(卡数)</th></tr></thead>' +
+              '<tbody><tr><td>资源池剩余量/总量</td><td>' + (r.cpu || '-') + '</td><td>' + (r.mem || '-') + '</td><td>' + (r.gpu || '-') + '</td></tr></tbody>' +
+              '</table></div>';
+            var expandRow = '<tr class="picker-expand-row" data-parent="' + r.id + '"><td colspan="5">' +
+              '<div class="picker-expand-wrap">' + metricTable + '</div>' +
+              '</td></tr>';
+            return baseRow + expandRow;
+          }).join('');
+        } else {
+          thead.innerHTML = '<tr><th style="width:48px;"></th><th>名称</th><th>存储容量（剩余/总）</th></tr>';
+          tbody.innerHTML = pageRows.map(function (r) {
+            var checked = !!resSelected.volume[r.id];
+            return '<tr data-id="' + r.id + '"><td><input type="checkbox" class="picker-ck" data-type="volume" data-id="' + r.id + '" ' + (checked ? 'checked' : '') + '></td><td>' + r.name + '</td><td>' + r.cap + '</td></tr>';
+          }).join('');
+        }
+        document.getElementById('pickerCount').textContent = '共 ' + total + ' 条';
+        var totalPages = Math.max(1, Math.ceil(total / pageSize));
+        document.getElementById('pickerPager').textContent = pageIndex + ' / ' + totalPages;
+        tbody.querySelectorAll('[data-action="toggle-parent"]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var id = btn.dataset.id;
+            poolExpanded[id] = !poolExpanded[id];
+            renderPickerTable();
+            renderSelectedList();
+          });
+        });
+        tbody.querySelectorAll('.picker-ck').forEach(function (ck) {
+          ck.addEventListener('change', function () {
+            var id = ck.dataset.id;
+            var type = ck.dataset.type || (currentTab === 'pool' ? 'pool' : 'volume');
+            toggleSelect(type, id, ck.checked);
+          });
+        });
+      }
+      function toggleSelect(type, id, checked) {
+        if (type === 'pool') {
+          if (checked) resSelected.pool[id] = true; else delete resSelected.pool[id];
+        } else {
+          if (checked) resSelected.volume[id] = true; else delete resSelected.volume[id];
+        }
+        renderSelectedList();
+        if (type === 'pool') renderPickerTable();
+      }
+      function renderSelectedList() {
+        var box = document.getElementById('selectedList');
+        var items = [];
+        Object.keys(resSelected.pool).forEach(function (id) {
+          items.push({ id: id, type: 'pool', name: getPoolLabelById(id) });
+        });
+        Object.keys(resSelected.volume).forEach(function (id) {
+          var r = resVolumes.find(function (x) { return x.id === id; });
+          if (r) items.push({ id: id, type: 'volume', name: r.name });
+        });
+        box.innerHTML = items.map(function (it) {
+          return '<div class="selected-item" data-type="' + it.type + '" data-id="' + it.id + '"><span>' + it.name + '</span><button class="remove" type="button">×</button></div>';
+        }).join('') || '<div style="color:var(--text2);font-size:13px;">未选择</div>';
+        box.querySelectorAll('.selected-item .remove').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var wrap = btn.closest('.selected-item');
+            var id = wrap.dataset.id;
+            var type = wrap.dataset.type;
+            if (type === 'pool') delete resSelected.pool[id]; else delete resSelected.volume[id];
+            renderPickerTable();
+            renderSelectedList();
+          });
+        });
+      }
+      function updateResSummary() {
+        var chips = [];
+        Object.keys(resCommitted.pool).forEach(function (id) {
+          chips.push({ label: getPoolLabelById(id) });
+        });
+        Object.keys(resCommitted.volume).forEach(function (id) {
+          var r = resVolumes.find(function (x) { return x.id === id; });
+          if (r) chips.push({ label: r.name });
+        });
+        var wrap = document.getElementById('resSummary');
+        var text = document.getElementById('resSummaryText');
+        if (chips.length === 0) {
+          wrap.classList.remove('chips');
+          wrap.innerHTML = '<span id="resSummaryText" style="color: var(--text2);">未选择</span>';
+        } else {
+          wrap.classList.add('chips');
+          wrap.innerHTML = chips.map(function (c) { return '<span class="chip">' + c.label + '</span>'; }).join('');
+        }
+      }
+      document.getElementById('btnPickRes').addEventListener('click', openResPicker);
+      document.querySelectorAll('.picker-tab').forEach(function (el) {
+        el.addEventListener('click', function () { switchTab(el.dataset.tab); });
+      });
+      document.getElementById('pickerSearch').addEventListener('input', function () {
+        pageIndex = 1;
+        renderPickerTable();
+      });
+      document.getElementById('pickerPrev').addEventListener('click', function () {
+        var total = getActiveData().length;
+        var totalPages = Math.max(1, Math.ceil(total / pageSize));
+        pageIndex = Math.max(1, pageIndex - 1);
+        document.getElementById('pickerPager').textContent = pageIndex + ' / ' + totalPages;
+        renderPickerTable();
+      });
+      document.getElementById('pickerNext').addEventListener('click', function () {
+        var total = getActiveData().length;
+        var totalPages = Math.max(1, Math.ceil(total / pageSize));
+        pageIndex = Math.min(totalPages, pageIndex + 1);
+        document.getElementById('pickerPager').textContent = pageIndex + ' / ' + totalPages;
+        renderPickerTable();
+      });
+      document.getElementById('pickerCancel').addEventListener('click', function () {
+        closeResPicker();
+      });
+      document.getElementById('pickerOk').addEventListener('click', function () {
+        resCommitted.pool = normalizePoolSelection(resSelected.pool);
+        resCommitted.volume = Object.assign({}, resSelected.volume);
+        updateResSummary();
+        closeResPicker();
+      });
     })();
   </script>
 </body>
